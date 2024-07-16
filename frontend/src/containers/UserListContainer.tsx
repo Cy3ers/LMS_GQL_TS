@@ -1,72 +1,58 @@
 // ./containers/UserListContainer.tsx
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import UserList from "../components/UserList";
 import { useToast } from "../contexts/ToastContext";
 import { User } from "../types";
-import useApi from "../hooks/useApi";
+import { useMutation } from "@apollo/client";
+import { ALL_USERS } from "../GQL/queries";
+import { REGISTER_USER, DELETE_USER } from "../GQL/mutations";
+import client from "../config/apollo/apollo";
+import useGraphQL from "../hooks/useGraphQL";
 
 const UserListContainer: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
   const { showToast } = useToast();
-  const { apiCall } = useApi();
+  const { data: allUsersData, loading: allUsersLoading, refetch: refetchAllUsers } = useGraphQL({ query: ALL_USERS });
+  const [addUserMutation] = useMutation(REGISTER_USER, { client });
+  const [deleteUserMutation] = useMutation(DELETE_USER, { client });
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      const fetchedUsers = await apiCall({ method: "GET", route: "/users" });
-      if (fetchedUsers) {
-        setUsers(fetchedUsers);
-      }
-    };
-    fetchUsers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    refetchAllUsers();
+  }, [refetchAllUsers]);
 
   const addUser = async (user: { username: string; password: string }) => {
     try {
-      const result = await apiCall({ method: "POST", route: "/users/register", payload: user });
-      if (result) {
-        const fetchedUsers = await apiCall({ method: "GET", route: "/users" });
-        if (fetchedUsers) {
-          setUsers(fetchedUsers);
-        }
-        showToast("User Added Successfully!");
-      } else {
-        showToast("Failed to add user.");
-      }
-    } catch (error) {
-      console.error("Error adding user:", error);
+      await addUserMutation({ variables: user });
+      refetchAllUsers();
+      showToast("User Added Successfully!");
+    } catch (err) {
+      console.error("Error adding user:", err);
       showToast("Failed to add user.");
     }
   };
 
   const removeUser = async (username: string) => {
-    const user = users.find((user) => user.username === username);
+    const user = allUsersData?.users.find((user: User) => user.username === username);
     if (!user) {
       showToast("User not found.");
       return;
     }
 
     try {
-      const result = await apiCall({ method: "DELETE", route: `/users/${user.id}` });
-      if (result) {
-        const fetchedUsers = await apiCall({ method: "GET", route: "/users" });
-        if (fetchedUsers) {
-          setUsers(fetchedUsers);
-        }
-        showToast("User Deleted Successfully!");
-      } else {
-        showToast("Failed to delete user.");
-      }
-    } catch (error) {
-      console.error("Error deleting user:", error);
+      await deleteUserMutation({ variables: { id: user.id } });
+      refetchAllUsers();
+      showToast("User Deleted Successfully!");
+    } catch (err) {
+      console.error("Error deleting user:", err);
       showToast("Failed to delete user.");
     }
   };
 
+  if (allUsersLoading) return <p>Loading...</p>;
+
   return (
     <UserList
-      users={users}
+      users={allUsersData?.users || []}
       addUser={addUser}
       removeUser={removeUser}
     />

@@ -1,28 +1,69 @@
-// ./hooks/useGraphQL.ts
-
 import { useState } from "react";
-import { gql } from "@apollo/client";
+import { DocumentNode, TypedDocumentNode, useQuery, useMutation } from "@apollo/client";
 import client from "../config/apollo/apollo";
+import { REGISTER_USER } from "../GQL/mutations";
 
-const useGraphQL = (endpoint: string) => {
+interface UseGraphQLParams {
+  query?: DocumentNode | TypedDocumentNode<any, any>;
+  mutation?: DocumentNode | TypedDocumentNode<any, any>;
+  variables?: Record<string, any>;
+}
+
+interface UseGraphQLOutput<Data = any> {
+  data: Data | undefined;
+  loading: boolean;
+  error: Error | undefined;
+  refetch: () => void;
+  save: (variables?: Record<string, any>) => Promise<any>;
+}
+
+const useGraphQL = <Data = any>({ query, mutation, variables }: UseGraphQLParams): UseGraphQLOutput<Data> => {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Error | undefined>(undefined);
 
-  const gqlRequest = async (query: string, variables?: Record<string, any>) => {
+  const { data, refetch } = useQuery(query as DocumentNode | TypedDocumentNode<any, any>, {
+    variables,
+    skip: !query,
+    client,
+    onError: (err) => {
+      setLoading(false);
+      console.log("Mutation is called during query");
+      setError(err);
+    }
+  });
+
+  const [mutate] = useMutation(REGISTER_USER as DocumentNode | TypedDocumentNode<any, any>, {
+    client,
+    onError: (err) => {
+      setLoading(false);
+      console.log("Mutation is called during query");
+      setError(err);
+    }
+  });
+
+  const save = async (newVariables?: Record<string, any>) => {
     setLoading(true);
-    setError(null);
+    setError(undefined);
+
     try {
-      const { data } = await client.query({ query: gql(query), variables });
-      return data;
+      const result = await mutate({ variables: newVariables });
+      return result.data;
     } catch (err) {
-      setError(err.message);
+      setError(err);
+      console.log("Mutation is called during query");
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  return { gqlRequest, loading, error };
+  return {
+    data,
+    loading,
+    error,
+    refetch,
+    save
+  };
 };
 
 export default useGraphQL;

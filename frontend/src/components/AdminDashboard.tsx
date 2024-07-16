@@ -1,6 +1,6 @@
 // ./components/AdminDashboard.tsx
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useQuery, useMutation } from "@apollo/client";
 import { logout } from "../auth";
 import { Task } from "../types";
@@ -19,6 +19,10 @@ const AdminDashboard: React.FC = () => {
 
   const { loading, error, data, refetch } = useQuery(ALL_TASKS, { client });
   const [deleteTask] = useMutation(DELETE_TASK, { client });
+
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
   const handleDeleteTask = async (id: number) => {
     await deleteTask({ variables: { id } });

@@ -13,6 +13,8 @@ import PassChangeContainer from "./containers/PassChangeContainer";
 import ToastProvider from "./contexts/ToastContext";
 import { ErrorBoundary } from "react-error-boundary";
 import { RenderError } from "./components/errors/ErrorBoundaryComponent";
+import { ApolloProvider } from "@apollo/client";
+import client from "./config/apollo/apollo";
 
 const ErrorBoundaryLoginContainer = withErrorBoundary(LoginContainer);
 
@@ -57,16 +59,18 @@ const App: React.FC = () => {
   const router = createBrowserRouter(routes);
 
   return (
-    <div className='App'>
-      <ErrorBoundary
-        FallbackComponent={RenderError}
-        onError={() => console.log("Some error caught!!")}
-      >
-        <ToastProvider>
-          <RouterProvider router={router} />
-        </ToastProvider>
-      </ErrorBoundary>
-    </div>
+    <ApolloProvider client={client}>
+      <div className='App'>
+        <ErrorBoundary
+          FallbackComponent={RenderError}
+          onError={() => console.log("Some error caught!!")}
+        >
+          <ToastProvider>
+            <RouterProvider router={router} />
+          </ToastProvider>
+        </ErrorBoundary>
+      </div>
+    </ApolloProvider>
   );
 };
 

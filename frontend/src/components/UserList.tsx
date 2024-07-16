@@ -1,11 +1,11 @@
 // ./components/UserList.tsx
 
-import React, { FC } from "react";
+import React, { FC, useState } from "react";
 import { User, UserListProps } from "../types";
 
 const UserList: FC<UserListProps> = ({ users, addUser, removeUser }) => {
-  const [username, setUsername] = React.useState<string>("");
-  const [password, setPassword] = React.useState<string>("");
+  const [username, setUsername] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
 
   const handleAddUser = (e: React.FormEvent) => {
     e.preventDefault();
