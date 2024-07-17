@@ -3,18 +3,29 @@
 import React, { useEffect } from "react";
 import UserList from "../components/UserList";
 import { useToast } from "../contexts/ToastContext";
-import { User } from "../types";
-import { useMutation } from "@apollo/client";
 import { ALL_USERS } from "../GQL/queries";
 import { REGISTER_USER, DELETE_USER } from "../GQL/mutations";
-import client from "../config/apollo/apollo";
-import useGraphQL from "../hooks/useGraphQL";
+import { useGqlQuery } from "../hooks/useGraphQL";
+
+interface User {
+  id?: string;
+  username: string;
+  password: string;
+}
 
 const UserListContainer: React.FC = () => {
   const { showToast } = useToast();
-  const { data: allUsersData, loading: allUsersLoading, refetch: refetchAllUsers } = useGraphQL({ query: ALL_USERS });
-  const [addUserMutation] = useMutation(REGISTER_USER, { client });
-  const [deleteUserMutation] = useMutation(DELETE_USER, { client });
+  const {
+    data: allUsersData,
+    loading: allUsersLoading,
+    save: addUserMutation,
+    refetch: refetchAllUsers
+  } = useGqlQuery<{ users: User[] }, { username: string; password: string }>({
+    query: ALL_USERS,
+    mutation: REGISTER_USER
+  });
+
+  const { save: deleteUser } = useGqlQuery({ query: ALL_USERS, mutation: DELETE_USER });
 
   useEffect(() => {
     refetchAllUsers();
@@ -22,7 +33,10 @@ const UserListContainer: React.FC = () => {
 
   const addUser = async (user: { username: string; password: string }) => {
     try {
-      await addUserMutation({ variables: user });
+      await addUserMutation({
+        username: user.username,
+        password: user.password
+      });
       refetchAllUsers();
       showToast("User Added Successfully!");
     } catch (err) {
@@ -31,15 +45,15 @@ const UserListContainer: React.FC = () => {
     }
   };
 
-  const removeUser = async (username: string) => {
-    const user = allUsersData?.users.find((user: User) => user.username === username);
+  const removeUser = async (id: string) => {
+    const user = allUsersData?.users.find((user: User) => user.id === id);
     if (!user) {
       showToast("User not found.");
       return;
     }
 
     try {
-      await deleteUserMutation({ variables: { id: user.id } });
+      await deleteUser({ id: id });
       refetchAllUsers();
       showToast("User Deleted Successfully!");
     } catch (err) {

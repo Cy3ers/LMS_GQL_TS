@@ -46,17 +46,18 @@ const UserList: FC<UserListProps> = ({ users, addUser, removeUser }) => {
       <div className='user-list'>
         <h2 className='li-header'>Users</h2>
         <ul>
-          {users.map((user: User) => (
-            <li key={user.username}>
-              {user.username}{" "}
-              <button
-                className='del-button'
-                onClick={() => removeUser(user.username)}
-              >
-                Remove
-              </button>
-            </li>
-          ))}
+          {users &&
+            users?.map((user: User) => (
+              <li key={user.username}>
+                {user.username}{" "}
+                <button
+                  className='del-button'
+                  onClick={() => user.id && removeUser(user.id)}
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
         </ul>
       </div>
     </div>

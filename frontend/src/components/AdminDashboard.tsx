@@ -1,37 +1,31 @@
 // ./components/AdminDashboard.tsx
 
 import React, { useEffect } from "react";
-import { useQuery, useMutation } from "@apollo/client";
 import { logout } from "../auth";
 import { Task } from "../types";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "../contexts/ToastContext";
-// import useApi from "../hooks/useApi";
-import client from "../config/apollo/apollo";
 import { ALL_TASKS } from "../GQL/queries";
 import { DELETE_TASK } from "../GQL/mutations";
+import { useGqlQuery } from "../hooks/useGraphQL";
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
-
-  // const { apiCall, responseData: tasks } = useApi();
-
-  const { loading, error, data, refetch } = useQuery(ALL_TASKS, { client });
-  const [deleteTask] = useMutation(DELETE_TASK, { client });
+  const { loading, data, refetch } = useGqlQuery<{ tasks: Task[] }, { input: Task }>({ query: ALL_TASKS });
+  const { save: deleteTask } = useGqlQuery({ query: ALL_TASKS, mutation: DELETE_TASK });
 
   useEffect(() => {
     refetch();
   }, [refetch]);
 
   const handleDeleteTask = async (id: number) => {
-    await deleteTask({ variables: { id } });
+    await deleteTask({ id: id });
     refetch();
     showToast("Task deleted successfully!");
   };
 
   if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error loading tasks</p>;
 
   const tasks: Task[] = data?.tasks || [];
 

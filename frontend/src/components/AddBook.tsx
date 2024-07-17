@@ -1,27 +1,24 @@
 // ./frontend/src/components/AddTask.tsx
 
 import React, { useState } from "react";
-// import useApi from "../hooks/useApi";
 import { useToast } from "../contexts/ToastContext";
 import { useNavigate } from "react-router-dom";
-import client from "../config/apollo/apollo";
-import { useMutation } from "@apollo/client";
+import { ALL_TASKS } from "../GQL/queries";
 import { CREATE_TASK } from "../GQL/mutations";
+import { useGqlQuery } from "../hooks/useGraphQL";
 
 const AddTask: React.FC = () => {
-  // const { apiCall } = useApi();
   const { showToast } = useToast();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("");
   const [priority, setPriority] = useState("");
   const navigate = useNavigate();
-
-  const [addTask, { loading, error }] = useMutation(CREATE_TASK, { client });
+  const { save: addTask, loading: addTaskLoading } = useGqlQuery({ query: ALL_TASKS, mutation: CREATE_TASK });
 
   const handleAddTask = async () => {
     try {
-      await addTask({ variables: { title, description, status, priority } });
+      await addTask({ title, description, status, priority });
       showToast("Task added successfully!");
       navigate("/dashboard");
     } catch (err) {
@@ -30,8 +27,7 @@ const AddTask: React.FC = () => {
     }
   };
 
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error loading tasks</p>;
+  if (addTaskLoading) return <p>Loading...</p>;
 
   return (
     <div>

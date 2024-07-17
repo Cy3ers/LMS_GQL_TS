@@ -1,69 +1,69 @@
-import { useState } from "react";
-import { DocumentNode, TypedDocumentNode, useQuery, useMutation } from "@apollo/client";
-import client from "../config/apollo/apollo";
-import { REGISTER_USER } from "../GQL/mutations";
+/* eslint-disable react-hooks/rules-of-hooks */
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, OperationVariables } from "@apollo/client";
 
-interface UseGraphQLParams {
-  query?: DocumentNode | TypedDocumentNode<any, any>;
-  mutation?: DocumentNode | TypedDocumentNode<any, any>;
-  variables?: Record<string, any>;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+interface UseGqlQueryProps<TData = any, TVariables = any> {
+  query?: any; // GraphQL query document
+  mutation?: any; // GraphQL mutation document
+  variables?: TVariables; // Variables for query or mutation
 }
 
-interface UseGraphQLOutput<Data = any> {
-  data: Data | undefined;
-  loading: boolean;
-  error: Error | undefined;
-  refetch: () => void;
-  save: (variables?: Record<string, any>) => Promise<any>;
-}
-
-const useGraphQL = <Data = any>({ query, mutation, variables }: UseGraphQLParams): UseGraphQLOutput<Data> => {
+export const useGqlQuery = <TData, TVariables extends OperationVariables>({
+  query,
+  mutation,
+  variables
+}: UseGqlQueryProps<TData, TVariables>) => {
+  const [data, setData] = useState<TData | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | undefined>(undefined);
 
-  const { data, refetch } = useQuery(query as DocumentNode | TypedDocumentNode<any, any>, {
-    variables,
+  // Query execution
+  const {
+    data: queryData,
+    refetch,
+    loading: queryLoading
+  } = useQuery<TData, TVariables>(query!, {
+    variables: variables as TVariables, // Cast variables to TVariables
     skip: !query,
-    client,
-    onError: (err) => {
+    onError: (error) => {
+      console.error("GraphQL query error:", error);
       setLoading(false);
-      console.log("Mutation is called during query");
-      setError(err);
     }
   });
 
-  const [mutate] = useMutation(REGISTER_USER as DocumentNode | TypedDocumentNode<any, any>, {
-    client,
-    onError: (err) => {
-      setLoading(false);
-      console.log("Mutation is called during query");
-      setError(err);
-    }
-  });
+  // Mutation execution
+  let mutate: (arg0: { variables: TVariables }) => any;
+  if (mutation) {
+    [mutate] = useMutation<TData, TVariables>(mutation!);
+  }
 
-  const save = async (newVariables?: Record<string, any>) => {
-    setLoading(true);
-    setError(undefined);
-
+  // Function to execute mutation
+  const handleMutate = async (mutationVariables?: TVariables) => {
     try {
-      const result = await mutate({ variables: newVariables });
-      return result.data;
-    } catch (err) {
-      setError(err);
-      console.log("Mutation is called during query");
-      throw err;
-    } finally {
+      setLoading(true);
+      const mutationResult = await mutate({ variables: mutationVariables as TVariables }); // Cast variables to TVariables if provided
+      setData(mutationResult.data as TData); // Set mutation result data
+    } catch (error) {
+      console.error("GraphQL mutation error:", error);
       setLoading(false);
     }
   };
+
+  // Save function to handle both refetch and mutate
+  const save = mutation ? handleMutate : refetch;
+
+  // useEffect to update data when queryData changes
+  useEffect(() => {
+    if (queryData) {
+      setData(queryData as TData); // Ensure data is set correctly
+      setLoading(false);
+    }
+  }, [queryData]);
 
   return {
     data,
-    loading,
-    error,
-    refetch,
-    save
+    loading: loading || queryLoading,
+    save,
+    refetch
   };
 };
-
-export default useGraphQL;

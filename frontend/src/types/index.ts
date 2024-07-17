@@ -23,7 +23,7 @@ export type Action =
   | { type: "REMOVE_BOOK"; isbn: string };
 
 export interface User {
-  id: number;
+  id?: string;
   username: string;
 }
 
