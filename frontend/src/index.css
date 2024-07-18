@@ -206,3 +206,14 @@ input[type="password"] {
 .mt-4 {
   margin-top: 1rem; /* 4 units */
 }
+
+.notification-popup {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background-color: white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  z-index: 1000;
+}

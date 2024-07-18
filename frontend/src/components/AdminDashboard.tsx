@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // ./components/AdminDashboard.tsx
 
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { logout } from "../auth";
 import { Task } from "../types";
 import { useNavigate } from "react-router-dom";
@@ -8,12 +9,35 @@ import { useToast } from "../contexts/ToastContext";
 import { ALL_TASKS } from "../GQL/queries";
 import { DELETE_TASK } from "../GQL/mutations";
 import { useGqlQuery } from "../hooks/useGraphQL";
+import { NOTIFICATION_SUBSCRIPTION } from "../GQL/subscriptions";
+import { Notification } from "../types/Notification";
+import { useSubscription } from "@apollo/client";
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
   const { loading, data, refetch } = useGqlQuery<{ tasks: Task[] }, { input: Task }>({ query: ALL_TASKS });
   const { save: deleteTask } = useGqlQuery({ query: ALL_TASKS, mutation: DELETE_TASK });
+
+  // const { data: subscriptionData, error: subscriptionError } = useSubscription<{ notification: Notification }>(
+  //   NOTIFICATION_SUBSCRIPTION,
+  //   {
+  //     // onSubscriptionData: ({ subscriptionData, ...rest }) => {
+  //     //   console.log(subscriptionData);
+  //     //   console.log(rest);
+  //     //   const notification = subscriptionData.data?.notification;
+  //     //   if (notification) {
+  //     //     showToast(`New Task Added: ${notification.message}`);
+  //     //     setIsPopupOpen(true); // Open the popup when a new notification is received
+  //     //   }
+  //     // }
+  //   }
+  // );
+
+  // console.log(subscriptionError);
+
+  // console.log(subscriptionData);
 
   useEffect(() => {
     refetch();
@@ -88,6 +112,13 @@ const AdminDashboard: React.FC = () => {
             ))}
         </ul>
       </div>
+      {/* {isPopupOpen && (
+        <div className='notification-popup'>
+          <h3>New Notifications</h3>
+          <ul>{subscriptionData?.notification && <li>{subscriptionData.notification.message}</li>}</ul>
+          <button onClick={() => setIsPopupOpen(false)}>Close</button>
+        </div>
+      )} */}
     </div>
   );
 };

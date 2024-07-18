@@ -1,4 +1,7 @@
 import Task from "../../models/Task";
+import { PubSub } from "graphql-subscriptions";
+
+const pubsub = new PubSub();
 
 const taskResolvers = {
   Query: {
@@ -11,6 +14,11 @@ const taskResolvers = {
     createTask: async (_: any, { title, description, status, priority }: any, { user }: any) => {
       if (!user) throw new Error("Not authenticated.");
       const newTask = await Task.create({ title, description, status, priority, userId: user.id });
+      pubsub.publish("TASK_ADDED", {
+        taskAdded: {
+          message: `New task added: ${title}`
+        }
+      });
       return newTask;
     },
     updateTask: async (_: any, { id, title, description, status, priority }: any, { user }: any) => {
@@ -37,6 +45,11 @@ const taskResolvers = {
 
       await task.destroy();
       return true;
+    }
+  },
+  Subscription: {
+    taskAdded: {
+      subscribe: () => pubsub.asyncIterator(["TASK_ADDED"])
     }
   }
 };
