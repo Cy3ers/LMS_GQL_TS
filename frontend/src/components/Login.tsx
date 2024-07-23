@@ -1,50 +1,54 @@
-// ./components/Login.tsx
-
 import React from "react";
+import { useForm, SubmitHandler } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as Yup from "yup";
+
+interface LoginFormInputs {
+  username: string;
+  password: string;
+}
 
 interface LoginProps {
-  username: string;
-  setUsername: React.Dispatch<React.SetStateAction<string>>;
-  password: string;
-  setPassword: React.Dispatch<React.SetStateAction<string>>;
-  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-  usernameError?: string | null;
-  passwordError?: string | null;
+  handleSubmit: SubmitHandler<LoginFormInputs>;
   invalidError?: string | null;
 }
 
-const Login: React.FC<LoginProps> = ({
-  username,
-  setUsername,
-  password,
-  setPassword,
-  handleSubmit,
-  usernameError,
-  passwordError,
-  invalidError
-}) => {
+const schema = Yup.object().shape({
+  username: Yup.string().required("Username is required"),
+  password: Yup.string().required("Password is required")
+});
+
+const Login: React.FC<LoginProps> = ({ handleSubmit, invalidError }) => {
+  const {
+    register,
+    handleSubmit: formSubmit,
+    formState: { errors, isValid, touchedFields }
+  } = useForm<LoginFormInputs>({
+    resolver: yupResolver(schema),
+    mode: "onChange"
+  });
+
   return (
     <div>
       <h2 className='navbar'>Login</h2>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={formSubmit(handleSubmit)}>
         <label>Username:</label>
         <input
           type='text'
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          {...register("username")}
         />
-        {usernameError && <div className='error-msg'>{usernameError}</div>}
+        {errors.username && touchedFields.username && <div className='error-msg'>{errors.username.message}</div>}
         <label>Password:</label>
         <input
           type='password'
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          {...register("password")}
         />
-        {passwordError && <div className='error-msg'>{passwordError}</div>}
+        {errors.password && touchedFields.password && <div className='error-msg'>{errors.password.message}</div>}
         {invalidError && <div className='error-msg'>{invalidError}</div>}
         <button
-          className='submit-btn'
+          className={`submit-btn ${!isValid ? "disabled" : ""}`}
           type='submit'
+          disabled={!isValid}
         >
           Login
         </button>

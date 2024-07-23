@@ -141,26 +141,13 @@ input[type="password"] {
   display: inline;
 }
 
-.add-button {
-  color: black;
-  cursor: pointer;
-  margin: 10px auto;
-  background: #fff;
-  opacity: 75%;
-  border: 0;
-  border-radius: 3px;
-  padding: 9px 35px;
-  display: block;
-  pointer-events: auto;
-}
-
-.add-button.disabled {
+.submit-btn.disabled {
   opacity: 50%;
   cursor: none;
   pointer-events: none;
 }
 
-.add-button:hover:not(.disable) {
+.submit-btn:hover:not(.disable) {
   transform: scale(1.005);
   opacity: 100%;
 }

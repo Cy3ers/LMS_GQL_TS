@@ -1,42 +1,24 @@
-// ./containers/LoginContainer.tsx
-
 import React, { useState } from "react";
 import Login from "../components/Login";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "../contexts/ToastContext";
-// import useGraphQL from "../hooks/useGraphQL";
 import client from "../config/apollo/apollo";
 import { useMutation } from "@apollo/client";
 import { LOGIN_USER } from "../GQL/mutations";
+import { SubmitHandler } from "react-hook-form";
 
-interface LoginContainerProps {
-  setError: (error: string) => void;
-  usernameError?: string | null;
-  passwordError?: string | null;
-  invalidError?: string | null;
+interface LoginFormInputs {
+  username: string;
+  password: string;
 }
 
-const LoginContainer: React.FC<LoginContainerProps> = ({ setError, usernameError, passwordError, invalidError }) => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+const LoginContainer: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
-  // const { gqlRequest } = useGraphQL("/graphql");
   const [loginUser, { loading, error }] = useMutation(LOGIN_USER, { client });
+  const [invalidError, setInvalidError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    if (username.trim() === "") {
-      setError("Username is required");
-      return;
-    }
-
-    if (password.trim() === "") {
-      setError("Password is required");
-      return;
-    }
-
+  const handleSubmit: SubmitHandler<LoginFormInputs> = async ({ username, password }) => {
     try {
       const { data } = await loginUser({ variables: { username, password } });
       const token = data?.login?.token;
@@ -46,12 +28,12 @@ const LoginContainer: React.FC<LoginContainerProps> = ({ setError, usernameError
         navigate("/dashboard");
         showToast("Login Successful!");
       } else {
-        setError("Invalid credentials");
+        setInvalidError("Invalid credentials");
         showToast("Login Failed!");
       }
     } catch (err) {
       console.error("Failed to login", err);
-      setError("Failed to login");
+      setInvalidError("Failed to login");
     }
   };
 
@@ -60,13 +42,7 @@ const LoginContainer: React.FC<LoginContainerProps> = ({ setError, usernameError
 
   return (
     <Login
-      username={username}
-      setUsername={setUsername}
-      password={password}
-      setPassword={setPassword}
       handleSubmit={handleSubmit}
-      usernameError={usernameError}
-      passwordError={passwordError}
       invalidError={invalidError}
     />
   );

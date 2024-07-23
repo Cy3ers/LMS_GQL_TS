@@ -9,14 +9,35 @@ import { useGqlQuery } from "../hooks/useGraphQL";
 import { NOTIFICATION_SUBSCRIPTION } from "../GQL/subscriptions";
 import { Notification } from "../types/Notification";
 import { useSubscription } from "@apollo/client";
+import { useForm, SubmitHandler } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as Yup from "yup";
+
+interface TaskFormInputs {
+  title: string;
+  description: string;
+  status: string;
+  priority: string;
+}
+
+const schema = Yup.object().shape({
+  title: Yup.string().required("Title is required"),
+  description: Yup.string().required("Description is required"),
+  status: Yup.string().required("Status is required"),
+  priority: Yup.string().required("Priority is required")
+});
 
 const AddTask: React.FC = () => {
   const { showToast } = useToast();
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [status, setStatus] = useState("");
-  const [priority, setPriority] = useState("");
   const navigate = useNavigate();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isValid, touchedFields }
+  } = useForm<TaskFormInputs>({
+    resolver: yupResolver(schema),
+    mode: "onChange"
+  });
   const { save: addTask, loading: addTaskLoading } = useGqlQuery({ query: ALL_TASKS, mutation: CREATE_TASK });
 
   const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -25,13 +46,10 @@ const AddTask: React.FC = () => {
     NOTIFICATION_SUBSCRIPTION,
     {
       onSubscriptionData: ({ subscriptionData: { data }, ...rest }) => {
-        console.log(data); // Log the data part of subscriptionData
-        console.log(rest); // Log the rest part
         const notification = data?.taskAdded;
-        console.log(`Notification: ${notification?.message}`); // Log the message to check if it's correct
         if (notification) {
           showToast(notification.message);
-          setIsPopupOpen(true); // Open the popup when a new notification is received
+          setIsPopupOpen(true);
         }
       }
     }
@@ -39,9 +57,9 @@ const AddTask: React.FC = () => {
 
   subscriptionError && console.log(subscriptionError);
 
-  const handleAddTask = async () => {
+  const onSubmit: SubmitHandler<TaskFormInputs> = async (data) => {
     try {
-      await addTask({ title, description, status, priority });
+      await addTask(data);
       // showToast("Task added successfully!");
       // navigate("/dashboard");
       setTimeout(() => {
@@ -49,7 +67,6 @@ const AddTask: React.FC = () => {
       }, 5000);
     } catch (err) {
       console.error("Failed to add task", err);
-      // showToast("Failed to add task");
     }
   };
 
@@ -58,41 +75,38 @@ const AddTask: React.FC = () => {
   return (
     <div>
       <h1>Add Task</h1>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleAddTask();
-        }}
-      >
+      <form onSubmit={handleSubmit(onSubmit)}>
         <input
           type='text'
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          {...register("title")}
           placeholder='Title'
-          required
         />
+        {errors.title && touchedFields.title && <p>{errors.title.message}</p>}
         <input
           type='text'
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          {...register("description")}
           placeholder='Description'
-          required
         />
+        {errors.description && touchedFields.description && <p>{errors.description.message}</p>}
         <input
           type='text'
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
+          {...register("status")}
           placeholder='Status'
-          required
         />
+        {errors.status && touchedFields.status && <p>{errors.status.message}</p>}
         <input
           type='text'
-          value={priority}
-          onChange={(e) => setPriority(e.target.value)}
+          {...register("priority")}
           placeholder='Priority'
-          required
         />
-        <button type='submit'>Add Task</button>
+        {errors.priority && touchedFields.priority && <p>{errors.priority.message}</p>}
+        <button
+          className={`submit-btn ${!isValid ? "disabled" : ""}`}
+          type='submit'
+          disabled={!isValid}
+        >
+          Add Task
+        </button>
       </form>
       {isPopupOpen && (
         <div className='notification-popup'>
